@@ -5,6 +5,8 @@ from pathlib import Path
 from Data import StorageData
 from Writer import Writer
 from Debugger import Debug
+import os.path
+
 
 # checks if the given subreddit exists
 def check_sub(subreddit, reddit):
@@ -16,6 +18,24 @@ def check_sub(subreddit, reddit):
     return exists
 
 
+# checks if the reddit data file exists, if not makes one
+def check_reddit_data_file(file):
+    if os.path.isfile(file) == bool(False):
+        temp = Writer(file, 'data')
+        temp.close()
+
+
+# uses user.json to connect to file, change the name of userdefault.json and put your values in to use
+def open_json_file(file):
+    j_file = open(file)
+    return json.load(j_file)
+
+
+def connect_to_reddit(j_data):
+    return praw.Reddit(client_id=j_data['id'], client_secret=j_data['secret'],
+                       username=j_data['username'], password=j_data['password'],
+                       user_agent=j_data['agent'])
+
 # code needs to be moved into a few more functions/classes, but functionally it is all there
 def main():
     # sets debug mode (is very simple atm)
@@ -23,12 +43,10 @@ def main():
     print("Enter a subreddit:")
     subreddit = input()
 
-    # uses user.json to connect to file, change the name of userdefault.json and put your values in to use
-    j_file = open('user.json')
-    j_data = json.load(j_file)
+    j_data = open_json_file('user.json')
 
     # connects to the reddit account using the json file
-    reddit = praw.Reddit(client_id= j_data['id'], client_secret=j_data['secret'], username=j_data['username'], password=j_data['password'], user_agent=j_data['agent'])
+    reddit = connect_to_reddit(j_data)
 
     if check_sub(subreddit, reddit):
         sub = reddit.subreddit(subreddit)
@@ -38,7 +56,10 @@ def main():
 
         # sets up the storage structure used to hold all the data
         storage = StorageData()
+
         file = Path('', 'reddit_data.xlsx')
+
+        check_reddit_data_file(file)
 
         # opens the excel file and then reads the values from it, as they need to be gathered each time
         book = reader.load_workbook(file)
